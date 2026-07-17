@@ -5,8 +5,9 @@ using UnityEngine;
 public struct SpawnerData : IComponentData
 {
     public Entity Prefab;
+    public Entity StartPoint;
+    public Entity TargetPoint;
     public float Interval;
-    public float3 Destination;
     public float Timer;
 }
 
@@ -14,6 +15,7 @@ public class SpawnerAuthoring : MonoBehaviour
 {
     public GameObject Prefab;
     public float SpawnInterval = 1f; // 何秒ごとにスポーンするか
+    public Transform StartPoint;
     public Transform TargetPoint;
 
     class Baker : Baker<SpawnerAuthoring>
@@ -24,8 +26,9 @@ public class SpawnerAuthoring : MonoBehaviour
             AddComponent(entity, new SpawnerData
             {
                 Prefab = GetEntity(authoring.Prefab, TransformUsageFlags.Dynamic),
+                StartPoint = GetEntity(authoring.StartPoint, TransformUsageFlags.Dynamic),
+                TargetPoint = GetEntity(authoring.TargetPoint, TransformUsageFlags.Dynamic),
                 Interval = authoring.SpawnInterval,
-                Destination = authoring.TargetPoint.position,
                 Timer = 0f
             });
         }

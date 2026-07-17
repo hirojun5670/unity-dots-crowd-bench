@@ -3,6 +3,6 @@ using Unity.Mathematics;
 
 public struct MoveTarget : IComponentData
 {
-    public float3 Destination;
+    public Entity TargetEntity;
     public float Speed;
 }

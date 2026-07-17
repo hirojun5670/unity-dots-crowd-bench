@@ -15,14 +15,13 @@ public partial struct MoveSystem : ISystem
     foreach (var (transform, target, entity) in
         SystemAPI.Query<RefRW<LocalTransform>, RefRO<MoveTarget>>().WithEntityAccess())
     {
-      float3 direction = math.normalize(target.ValueRO.Destination - transform.ValueRO.Position);
+      float3 destination = SystemAPI.GetComponent<LocalTransform>(target.ValueRO.TargetEntity).Position;
+      float3 direction = math.normalize(destination - transform.ValueRO.Position);
       transform.ValueRW.Position += direction * target.ValueRO.Speed * deltaTime;
       transform.ValueRW.Rotation = quaternion.LookRotationSafe(direction, math.up());
 
-      if (math.distance(transform.ValueRO.Position, target.ValueRO.Destination) < 0.5f)
-      {
+      if (math.distance(transform.ValueRO.Position, destination) < 0.5f)
         ecb.DestroyEntity(entity);
-      }
     }
 
     ecb.Playback(state.EntityManager);
