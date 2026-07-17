@@ -1,0 +1,48 @@
+.root {
+    flex-grow: 1;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 24px;
+}
+
+/* 左上のタイトル */
+.title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 240);
+    align-self: flex-start;
+}
+
+/* 右側の操作パネル全体 */
+.control-panel {
+    flex-direction: column;
+    width: 200px;
+    align-self: flex-start;
+    background-color: rgba(30, 30, 30, 0.85);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* 1つ1つの操作ブロック */
+.control-block {
+    flex-direction: column;
+    margin-bottom: 14px;
+}
+
+.control-block:last-child {
+    margin-bottom: 0;
+}
+
+.control-label {
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.control-slider {
+    margin: 0;
+}
+
+.control-color {
+    margin: 0;
+}
