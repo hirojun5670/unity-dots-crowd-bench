@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="MainUI.uss" />
+
+    <ui:VisualElement name="root" class="root" picking-mode="Ignore">
+
+        <!-- 左上：タイトル -->
+        <ui:Label text="DOTS Crowd Bench" name="title-label" class="title" />
+
+        <!-- 右側：操作ブロックを縦に積み重ねるパネル -->
+        <ui:VisualElement name="control-panel" class="control-panel">
+
+            <ui:VisualElement class="control-block">
+                <ui:Label text="Count" class="control-label" />
+                <ui:Label text="0" class="count-label" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
