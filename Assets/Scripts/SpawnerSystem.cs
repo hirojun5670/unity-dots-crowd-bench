@@ -18,9 +18,11 @@ public partial struct SpawnerSystem : ISystem
       {
         spawner.ValueRW.Timer = 0f;
         var newEntity = ecb.Instantiate(spawner.ValueRO.Prefab);
+        var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
+        ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos));
         ecb.AddComponent(newEntity, new MoveTarget
         {
-          Destination = spawner.ValueRO.Destination,
+          TargetEntity = spawner.ValueRO.TargetPoint,
           Speed = 3f
         });
       }
