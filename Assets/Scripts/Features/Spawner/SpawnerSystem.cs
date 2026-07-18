@@ -8,53 +8,53 @@ using UnityDotsCrowdLab.Features.Movement;
 namespace UnityDotsCrowdLab.Features.Spawner
 {
 
-  [BurstCompile]
-  public partial struct SpawnerSystem : ISystem
-  {
     [BurstCompile]
-    public void OnUpdate(ref SystemState state)
+    public partial struct SpawnerSystem : ISystem
     {
-      float deltaTime = SystemAPI.Time.DeltaTime;
-      var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
-
-      foreach (var spawner in SystemAPI.Query<RefRW<SpawnerData>>())
-      {
-        spawner.ValueRW.Timer += deltaTime;
-        if (spawner.ValueRW.Timer >= spawner.ValueRO.Interval)
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
         {
-          spawner.ValueRW.Timer = 0f;
-          var newEntity = ecb.Instantiate(spawner.ValueRO.Prefab);
+            float deltaTime = SystemAPI.Time.DeltaTime;
+            var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
 
-          // 初期位置
-          var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
-          ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos));
+            foreach (var spawner in SystemAPI.Query<RefRW<SpawnerData>>())
+            {
+                spawner.ValueRW.Timer += deltaTime;
+                if (spawner.ValueRW.Timer >= spawner.ValueRO.Interval)
+                {
+                    spawner.ValueRW.Timer = 0f;
+                    var newEntity = ecb.Instantiate(spawner.ValueRO.Prefab);
 
-          // チーム
-          ecb.AddComponent(newEntity, new FactionData
-          {
-            Team = spawner.ValueRO.FactionID
-          });
+                    // 初期位置
+                    var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
+                    ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos));
 
-          // 移動
-          ecb.AddComponent(newEntity, new MoveTarget
-          {
-            TargetEntity = spawner.ValueRO.TargetPoint,
-            Speed = 3f
-          });
+                    // チーム
+                    ecb.AddComponent(newEntity, new FactionData
+                    {
+                        Team = spawner.ValueRO.FactionID
+                    });
 
-          // ベースカラーの変更
-          var randomColor = new float4(
-              UnityEngine.Random.value,
-              UnityEngine.Random.value,
-              UnityEngine.Random.value,
-              1f
-          );
-          ecb.AddComponent(newEntity, new URPMaterialPropertyBaseColor { Value = randomColor });
+                    // 移動
+                    ecb.AddComponent(newEntity, new MoveTarget
+                    {
+                        TargetEntity = spawner.ValueRO.TargetPoint,
+                        Speed = 3f
+                    });
+
+                    // ベースカラーの変更
+                    var randomColor = new float4(
+                        UnityEngine.Random.value,
+                        UnityEngine.Random.value,
+                        UnityEngine.Random.value,
+                        1f
+                    );
+                    ecb.AddComponent(newEntity, new URPMaterialPropertyBaseColor { Value = randomColor });
+                }
+            }
+
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
         }
-      }
-
-      ecb.Playback(state.EntityManager);
-      ecb.Dispose();
     }
-  }
 }
