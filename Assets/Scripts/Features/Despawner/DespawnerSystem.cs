@@ -5,7 +5,10 @@ using UnityDotsCrowdLab.Features.Targeting;
 
 namespace UnityDotsCrowdLab.Features.Features.Despawner
 {
-    [UpdateAfter(typeof(CombatSystem))]
+    /// <summary>
+    /// healthが０以下のEntityを削除するSystem
+    /// </summary>
+    [UpdateAfter(typeof(DamageSystem))]
     [BurstCompile]
     public partial struct DespawnerSystem : ISystem
     {

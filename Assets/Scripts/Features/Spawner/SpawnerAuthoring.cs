@@ -9,8 +9,10 @@ namespace UnityDotsCrowdLab.Features.Spawner
         public GameObject Prefab;
         public float SpawnInterval = 1f; // 何秒ごとにスポーンするか
         public int FactionID = 0;// チームID
+        public Color FactionColor;
         public Transform StartPoint;
         public Transform TargetPoint;
+
 
         class Baker : Baker<SpawnerAuthoring>
         {
@@ -21,6 +23,7 @@ namespace UnityDotsCrowdLab.Features.Spawner
                 {
                     Prefab = GetEntity(authoring.Prefab, TransformUsageFlags.Dynamic),
                     FactionID = authoring.FactionID,
+                    FactionColor = new float4(authoring.FactionColor.r, authoring.FactionColor.g, authoring.FactionColor.b, 1f),
                     StartPoint = GetEntity(authoring.StartPoint, TransformUsageFlags.Dynamic),
                     TargetPoint = GetEntity(authoring.TargetPoint, TransformUsageFlags.Dynamic),
                     Interval = authoring.SpawnInterval,

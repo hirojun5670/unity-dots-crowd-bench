@@ -127,4 +127,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UnityDotsCrowdLab.Features.CombatUnit.CombatUnitAuthoring
   MaxHealth: 100
   AttackDamage: 10
-  AttackRange: 2
+  AttackRange: 1
+  AttackCoolTime: 1
+  Radius: 0.5

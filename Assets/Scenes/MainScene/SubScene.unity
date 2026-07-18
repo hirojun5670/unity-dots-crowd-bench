@@ -405,8 +405,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnerAuthoring
   Prefab: {fileID: 8067346877507334403, guid: 39669c13dc5f958479e48e347731b3a3, type: 3}
-  SpawnInterval: 0.5
+  SpawnInterval: 2
   FactionID: 0
+  FactionColor: {r: 1, g: 0, b: 0, a: 0}
   StartPoint: {fileID: 2047095539}
   TargetPoint: {fileID: 267940955}
 --- !u!4 &708564211
@@ -598,8 +599,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnerAuthoring
   Prefab: {fileID: 8067346877507334403, guid: 39669c13dc5f958479e48e347731b3a3, type: 3}
-  SpawnInterval: 0.5
+  SpawnInterval: 2
   FactionID: 1
+  FactionColor: {r: 0, g: 0.26629424, b: 1, a: 0}
   StartPoint: {fileID: 825745085}
   TargetPoint: {fileID: 1946344058}
 --- !u!4 &1669509884
