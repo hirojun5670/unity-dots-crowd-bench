@@ -43,13 +43,7 @@ namespace UnityDotsCrowdLab.Features.Spawner
                     });
 
                     // ベースカラーの変更
-                    var randomColor = new float4(
-                        UnityEngine.Random.value,
-                        UnityEngine.Random.value,
-                        UnityEngine.Random.value,
-                        1f
-                    );
-                    ecb.AddComponent(newEntity, new URPMaterialPropertyBaseColor { Value = randomColor });
+                    ecb.AddComponent(newEntity, new URPMaterialPropertyBaseColor { Value = spawner.ValueRO.FactionColor });
                 }
             }
 
