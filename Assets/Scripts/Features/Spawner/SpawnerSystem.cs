@@ -1,6 +1,8 @@
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Burst;
+using Unity.Rendering;
+using Unity.Mathematics;
 using UnityDotsCrowdLab.Features.Movement;
 
 namespace UnityDotsCrowdLab.Features.Spawner
@@ -22,13 +24,32 @@ namespace UnityDotsCrowdLab.Features.Spawner
         {
           spawner.ValueRW.Timer = 0f;
           var newEntity = ecb.Instantiate(spawner.ValueRO.Prefab);
+
+          // 初期位置
           var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
           ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos));
+
+          // チーム
+          ecb.AddComponent(newEntity, new FactionData
+          {
+            Team = spawner.ValueRO.FactionID
+          });
+
+          // 移動
           ecb.AddComponent(newEntity, new MoveTarget
           {
             TargetEntity = spawner.ValueRO.TargetPoint,
             Speed = 3f
           });
+
+          // ベースカラーの変更
+          var randomColor = new float4(
+              UnityEngine.Random.value,
+              UnityEngine.Random.value,
+              UnityEngine.Random.value,
+              1f
+          );
+          ecb.AddComponent(newEntity, new URPMaterialPropertyBaseColor { Value = randomColor });
         }
       }
 
