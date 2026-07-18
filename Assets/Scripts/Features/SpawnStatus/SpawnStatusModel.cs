@@ -20,6 +20,7 @@ namespace UnityDotsCrowdLab.Features.SpawnStatus
         public SpawnStatusModel()
         {
             var world = World.DefaultGameObjectInjectionWorld;
+            // MoveTargetが付加されているEntityを探すクエリ
             query = world.EntityManager.CreateEntityQuery(typeof(MoveTarget));
         }
 
