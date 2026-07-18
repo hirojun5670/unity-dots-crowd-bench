@@ -8,6 +8,7 @@ namespace UnityDotsCrowdLab.Features.Spawner
     {
         public GameObject Prefab;
         public float SpawnInterval = 1f; // 何秒ごとにスポーンするか
+        public int FactionID = 0;// チームID
         public Transform StartPoint;
         public Transform TargetPoint;
 
@@ -19,6 +20,7 @@ namespace UnityDotsCrowdLab.Features.Spawner
                 AddComponent(entity, new SpawnerData
                 {
                     Prefab = GetEntity(authoring.Prefab, TransformUsageFlags.Dynamic),
+                    FactionID = authoring.FactionID,
                     StartPoint = GetEntity(authoring.StartPoint, TransformUsageFlags.Dynamic),
                     TargetPoint = GetEntity(authoring.TargetPoint, TransformUsageFlags.Dynamic),
                     Interval = authoring.SpawnInterval,
