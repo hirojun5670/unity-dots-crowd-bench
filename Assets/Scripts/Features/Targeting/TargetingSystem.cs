@@ -17,6 +17,12 @@ namespace UnityDotsCrowdLab.Features.Targeting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.HasSingleton<TargetingConfig>())
+                return;
+
+            if (SystemAPI.GetSingleton<TargetingConfig>().Mode != TargetingMode.BruteForce)
+                return;
+
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
 
             foreach (var (transform, faction, radius, attack, entity) in
