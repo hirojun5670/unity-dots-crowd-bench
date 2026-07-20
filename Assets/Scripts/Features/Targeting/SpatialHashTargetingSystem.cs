@@ -45,8 +45,8 @@ namespace UnityDotsCrowdLab.Features.Targeting
             spatialMap.Clear();
 
             // 空間ハッシュの構築
-            foreach (var (transform, faction, entity) in
-                SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>>().WithEntityAccess())
+            foreach (var (transform, faction, radius, entity) in
+                SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>>().WithEntityAccess())
             {
                 int3 cellCoord = ComputeCellCoord(transform.ValueRO.Position, cellSize);
                 var hash = ComputeHash(cellCoord);
