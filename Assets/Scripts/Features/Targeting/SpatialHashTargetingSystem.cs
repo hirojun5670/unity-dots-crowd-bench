@@ -5,6 +5,7 @@ using UnityDotsCrowdLab.Features.CombatUnit;
 using UnityDotsCrowdLab.Features.Spawner;
 using Unity.Mathematics;
 using Unity.Collections;
+using UnityDotsCrowdLab.Core.Spatial;
 
 namespace UnityDotsCrowdLab.Features.Targeting
 {
@@ -59,8 +60,8 @@ namespace UnityDotsCrowdLab.Features.Targeting
             foreach (var (transform, faction, radius, entity) in
                 SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>>().WithEntityAccess())
             {
-                int3 cellCoord = ComputeCellCoord(transform.ValueRO.Position, cellSize);
-                var hash = ComputeHash(cellCoord);
+                int3 cellCoord = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, cellSize);
+                var hash = SpatialHashUtility.ComputeHash(cellCoord);
                 spatialMap.Add(hash, entity);
             }
 
@@ -69,7 +70,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
             {
                 Entity nearest = Entity.Null;
                 float nearestDistSq = float.MaxValue;
-                int3 myCell = ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
+                int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
                 float estimatedMaxTargetRadius = 1.0f; // 目安としての最大ターゲット半径、必要に応じて調整
                 float maxPossibleDistance = attack.ValueRO.Range + radius.ValueRO.Radius + estimatedMaxTargetRadius;
                 int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
@@ -78,7 +79,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
                         for (int dz = -cellSpan; dz <= cellSpan; dz++)
                         {
-                            int neighborHash = ComputeHash(myCell + new int3(dx, dy, dz));
+                            int neighborHash = SpatialHashUtility.ComputeHash(myCell + new int3(dx, dy, dz));
 
                             foreach (var candidate in spatialMap.GetValuesForKey(neighborHash))
                             {
@@ -108,17 +109,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
 
-        }
-
-        int3 ComputeCellCoord(float3 position, float cellSize)
-        {
-            return (int3)math.floor(position / cellSize);
-        }
-
-        int ComputeHash(int3 cellCoord)
-        {
-            // 空間ハッシュの計算、よく使われる素数でXORを取る
-            return (cellCoord.x * 73856093) ^ (cellCoord.y * 19349663) ^ (cellCoord.z * 83492791);
         }
     }
 }
