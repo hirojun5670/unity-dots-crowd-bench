@@ -59,10 +59,13 @@ namespace UnityDotsCrowdLab.Features.Targeting
                 Entity nearest = Entity.Null;
                 float nearestDistSq = float.MaxValue;
                 int3 myCell = ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
+                float estimatedMaxTargetRadius = 1.0f; // 目安としての最大ターゲット半径、必要に応じて調整
+                float maxPossibleDistance = attack.ValueRO.Range + radius.ValueRO.Radius + estimatedMaxTargetRadius;
+                int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
 
-                for (int dx = -1; dx <= 1; dx++)
-                    for (int dy = -1; dy <= 1; dy++)
-                        for (int dz = -1; dz <= 1; dz++)
+                for (int dx = -cellSpan; dx <= cellSpan; dx++)
+                    for (int dy = -cellSpan; dy <= cellSpan; dy++)
+                        for (int dz = -cellSpan; dz <= cellSpan; dz++)
                         {
                             int neighborHash = ComputeHash(myCell + new int3(dx, dy, dz));
 
