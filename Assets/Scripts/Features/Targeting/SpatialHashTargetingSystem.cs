@@ -39,7 +39,8 @@ namespace UnityDotsCrowdLab.Features.Targeting
 
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             float cellSize = config.CellSize;
-
+            if (cellSize <= 0f)
+                return;
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
             spatialMap.Clear();
 
