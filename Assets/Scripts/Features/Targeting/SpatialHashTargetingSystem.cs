@@ -16,10 +16,18 @@ namespace UnityDotsCrowdLab.Features.Targeting
     {
         NativeParallelMultiHashMap<int, Entity> spatialMap;
 
+        ComponentLookup<FactionData> factionLookup;
+        ComponentLookup<LocalTransform> transformLookup;
+        ComponentLookup<UnitRadius> radiusLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             spatialMap = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent);
+
+            factionLookup = state.GetComponentLookup<FactionData>(isReadOnly: true);
+            transformLookup = state.GetComponentLookup<LocalTransform>(isReadOnly: true);
+            radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
         [BurstCompile]
@@ -43,6 +51,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
                 return;
             var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
             spatialMap.Clear();
+            factionLookup.Update(ref state);
+            transformLookup.Update(ref state);
+            radiusLookup.Update(ref state);
 
             // 空間ハッシュの構築
             foreach (var (transform, faction, radius, entity) in
@@ -72,10 +83,10 @@ namespace UnityDotsCrowdLab.Features.Targeting
                             foreach (var candidate in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (candidate == entity) continue;
-                                if (faction.ValueRO.Team == SystemAPI.GetComponent<FactionData>(candidate).Team) continue;
+                                if (faction.ValueRO.Team == factionLookup[candidate].Team) continue;
 
-                                var targetTransform = SystemAPI.GetComponent<LocalTransform>(candidate);
-                                var targetRadius = SystemAPI.GetComponent<UnitRadius>(candidate);
+                                var targetTransform = transformLookup[candidate];
+                                var targetRadius = radiusLookup[candidate];
 
                                 float surfaceDist = math.distance(transform.ValueRO.Position, targetTransform.Position)
  - radius.ValueRO.Radius - targetRadius.Radius;
