@@ -3,7 +3,7 @@ using Unity.Transforms;
 using Unity.Burst;
 using Unity.Rendering;
 using Unity.Mathematics;
-using UnityDotsCrowdLab.Features.Movement;
+using UnityDotsCrowdLab.Features.CombatUnit;
 
 namespace UnityDotsCrowdLab.Features.Spawner
 {
