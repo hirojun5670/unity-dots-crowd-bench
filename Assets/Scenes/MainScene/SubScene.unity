@@ -454,7 +454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnerAuthoring
   Prefab: {fileID: 8067346877507334403, guid: 39669c13dc5f958479e48e347731b3a3, type: 3}
-  SpawnInterval: 2
+  SpawnInterval: 0.5
   FactionID: 0
   FactionColor: {r: 1, g: 0, b: 0, a: 0}
   StartPoint: {fileID: 2047095539}
@@ -634,7 +634,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1669509883
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -648,7 +648,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnerAuthoring
   Prefab: {fileID: 8067346877507334403, guid: 39669c13dc5f958479e48e347731b3a3, type: 3}
-  SpawnInterval: 2
+  SpawnInterval: 0.5
   FactionID: 1
   FactionColor: {r: 0, g: 0.26629424, b: 1, a: 0}
   StartPoint: {fileID: 825745085}
