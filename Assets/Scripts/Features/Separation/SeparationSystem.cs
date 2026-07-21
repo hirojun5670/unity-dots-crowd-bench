@@ -33,6 +33,8 @@ namespace UnityDotsCrowdLab.Features.Separation
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            return;
+
             if (!SystemAPI.HasSingleton<TargetingConfig>()) return;
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             float cellSize = config.CellSize;
