@@ -1,32 +1,76 @@
 .root {
+    --panel-bg: rgba(18, 24, 28, 0.9);
+    --panel-edge: rgba(80, 160, 170, 0.55);
+    --text-primary: rgb(232, 240, 243);
+    --text-muted: rgb(162, 178, 186);
+    --accent: rgb(104, 224, 213);
+    --accent-warm: rgb(255, 186, 113);
+
     flex-grow: 1;
     flex-direction: row;
     justify-content: space-between;
-    padding: 24px;
+    align-items: flex-start;
+    padding-top: 20px;
+    padding-right: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
 }
 
-/* 左上のタイトル */
 .title {
-    font-size: 16px;
+    font-size: 24px;
     -unity-font-style: bold;
-    color: rgb(240, 240, 240);
-    align-self: flex-start;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+    background-color: rgba(10, 12, 14, 0.52);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: var(--accent);
+    padding-top: 8px;
+    padding-right: 12px;
+    padding-bottom: 8px;
+    padding-left: 12px;
 }
 
-/* 右側の操作パネル全体 */
 .control-panel {
     flex-direction: column;
     width: 200px;
     align-self: flex-start;
-    background-color: rgba(30, 30, 30, 0.85);
-    border-radius: 8px;
-    padding: 12px;
+    background-color: var(--panel-bg);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: var(--panel-edge);
+    border-right-color: var(--panel-edge);
+    border-bottom-color: rgba(20, 24, 28, 0.95);
+    border-left-color: var(--panel-edge);
+    padding-top: 12px;
+    padding-right: 12px;
+    padding-bottom: 12px;
+    padding-left: 12px;
 }
 
-/* 1つ1つの操作ブロック */
 .control-block {
     flex-direction: column;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
+    padding-top: 8px;
+    padding-right: 10px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+    background-color: rgba(255, 255, 255, 0.035);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-left-width: 2px;
+    border-left-color: rgba(104, 224, 213, 0.62);
 }
 
 .control-block:last-child {
@@ -34,9 +78,28 @@
 }
 
 .control-label {
-    color: rgb(200, 200, 200);
-    font-size: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.6px;
     margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+#label-fps,
+#label-fps-average,
+#label-targeting-mode,
+#label-count {
+    color: var(--text-primary);
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+#label-fps {
+    color: var(--accent-warm);
+}
+
+#label-fps-average {
+    color: var(--accent);
 }
 
 .control-slider {
