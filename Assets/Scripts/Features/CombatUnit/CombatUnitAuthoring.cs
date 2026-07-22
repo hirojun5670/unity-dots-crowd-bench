@@ -1,5 +1,5 @@
 using Unity.Entities;
-using Unity.VisualScripting;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace UnityDotsCrowdLab.Features.CombatUnit
@@ -22,7 +22,7 @@ namespace UnityDotsCrowdLab.Features.CombatUnit
                 AddComponent(entity, new AttackPowerData { Damage = authoring.AttackDamage, Range = authoring.AttackRange, Cooldown = authoring.AttackCoolTime });
                 AddComponent(entity, new UnitRadius { Radius = authoring.Radius });
                 AddComponent(entity, new CombatTarget { Value = Entity.Null });
-                AddComponent(entity, new BoidVelocity { Value = 0f });
+                AddComponent(entity, new BoidVelocity { Value = float3.zero });
             }
         }
     }
