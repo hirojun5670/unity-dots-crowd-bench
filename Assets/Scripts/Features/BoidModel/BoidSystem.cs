@@ -78,7 +78,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                                 float3 separationVector = transform.ValueRO.Position - transformLookup[other].Position;
                                 float distance = math.length(separationVector);
                                 float reciprocalDistance = distance > 0f ? 1f / distance : 0f;
-                                separationForce += math.normalize(separationVector) * reciprocalDistance;
+                                separationForce += math.normalizesafe(separationVector) * reciprocalDistance;
 
                                 // 整列
                                 float3 otherVelocity = velocityLookup[other].Value;
@@ -159,6 +159,8 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 transform.ValueRW.Position += boidForce * state.WorldUnmanaged.Time.DeltaTime;
 
 
+                // 速度制限処理後の実速度で再計算
+                currentSpeed = math.length(boidForce);
                 // 進行方向に回転させる
                 if (currentSpeed > 0.0001f)
                 {
