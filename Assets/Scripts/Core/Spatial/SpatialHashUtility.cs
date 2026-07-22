@@ -25,7 +25,6 @@ namespace UnityDotsCrowdLab.Core.Spatial
 
         /// <summary>
         /// セルの座標をハッシュ値に変換
-        /// Cantor pairing を応用した3D用ハッシュ関数
         /// </summary>
         /// <param name="cellCoord">セル座標</param>
         /// <returns>ハッシュ値</returns>
