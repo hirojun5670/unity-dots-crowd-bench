@@ -6,9 +6,11 @@ using Unity.Collections;
 using UnityDotsCrowdLab.Features.Targeting;
 using UnityDotsCrowdLab.Core.Spatial;
 using UnityDotsCrowdLab.Features.Spawner;
+using Unity.Burst;
 
 namespace UnityDotsCrowdLab.Features.BoidModel
 {
+    [BurstCompile]
     public partial struct BoidSystem : ISystem
     {
         NativeParallelMultiHashMap<int, Entity> spatialMap;
@@ -18,6 +20,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         ComponentLookup<BoidVelocity> velocityLookup;
         ComponentLookup<UnitRadius> radiusLookup;
 
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             spatialMap = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent);
@@ -27,11 +30,13 @@ namespace UnityDotsCrowdLab.Features.BoidModel
             radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
+        [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
             spatialMap.Dispose();
         }
 
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             if (!SystemAPI.HasSingleton<TargetingConfig>()) return;
@@ -73,9 +78,9 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                             {
                                 if (other == entity) continue;
                                 if (faction.ValueRO.Team != factionLookup[other].Team) continue;
-
+                                float3 otherPosition = transformLookup[other].Position;
                                 // 分離
-                                float3 separationVector = transform.ValueRO.Position - transformLookup[other].Position;
+                                float3 separationVector = transform.ValueRO.Position - otherPosition;
                                 float distance = math.length(separationVector);
                                 float reciprocalDistance = distance > 0f ? 1f / distance : 0f;
                                 separationForce += math.normalizesafe(separationVector) * reciprocalDistance;
@@ -85,7 +90,6 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                                 alignmentForce += otherVelocity;
 
                                 // 結合
-                                float3 otherPosition = transformLookup[other].Position;
                                 cohesionCenter += otherPosition;
                                 neighborCount++;
                             }
@@ -100,7 +104,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 }
 
                 // Weight
-                float separationWeight = 2.0f;
+                float separationWeight = 2.4f;
                 float alignmentWeight = 0.8f;
                 float cohesionWeight = 0.8f;
                 float targetWeight = 1.5f;
