@@ -1,7 +1,7 @@
 using System;
 using R3;
 using Unity.Entities;
-using UnityDotsCrowdLab.Features.Movement;
+using UnityDotsCrowdLab.Features.CombatUnit;
 using VContainer.Unity;
 
 namespace UnityDotsCrowdLab.Features.SpawnStatus

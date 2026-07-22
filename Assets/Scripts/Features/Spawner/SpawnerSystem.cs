@@ -3,7 +3,7 @@ using Unity.Transforms;
 using Unity.Burst;
 using Unity.Rendering;
 using Unity.Mathematics;
-using UnityDotsCrowdLab.Features.Movement;
+using UnityDotsCrowdLab.Features.CombatUnit;
 
 namespace UnityDotsCrowdLab.Features.Spawner
 {
@@ -27,7 +27,13 @@ namespace UnityDotsCrowdLab.Features.Spawner
 
                     // 初期位置
                     var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
-                    ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos));
+                    // ランダムに初期位置をずらす
+                    float3 randomOffset = new float3(
+                        UnityEngine.Random.Range(-1f, 1f),
+                        0f,
+                        UnityEngine.Random.Range(-1f, 1f)
+                    );
+                    ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos + randomOffset));
 
                     // チーム
                     ecb.AddComponent(newEntity, new FactionData

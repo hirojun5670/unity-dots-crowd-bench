@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace UnityDotsCrowdLab.Features.Movement
+namespace UnityDotsCrowdLab.Features.CombatUnit
 {
     public struct MoveTarget : IComponentData
     {
