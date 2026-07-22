@@ -8,12 +8,22 @@
 
         <!-- 右側：操作ブロックを縦に積み重ねるパネル -->
         <ui:VisualElement name="control-panel" class="control-panel">
-
+            <ui:VisualElement class="control-block">
+                <ui:Label text="FPS" class="control-label" />
+                <ui:Label text="0" name="label-fps" />
+            </ui:VisualElement>
+            <ui:VisualElement class="control-block">
+                <ui:Label text="FPS Average" class="control-label" />
+                <ui:Label text="0" name="label-fps-average" />
+            </ui:VisualElement>
+            <ui:VisualElement class="control-block">
+                <ui:Label text="Targeting Mode" class="control-label" />
+                <ui:Label text="0" name="label-targeting-mode" />
+            </ui:VisualElement>
             <ui:VisualElement class="control-block">
                 <ui:Label text="Count" class="control-label" />
                 <ui:Label text="0" name="label-count" />
             </ui:VisualElement>
-
         </ui:VisualElement>
 
     </ui:VisualElement>
