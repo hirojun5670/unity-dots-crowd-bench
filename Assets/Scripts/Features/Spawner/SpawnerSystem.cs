@@ -29,9 +29,9 @@ namespace UnityDotsCrowdLab.Features.Spawner
                     var startPos = SystemAPI.GetComponent<LocalTransform>(spawner.ValueRO.StartPoint).Position;
                     // ランダムに初期位置をずらす
                     float3 randomOffset = new float3(
-                        UnityEngine.Random.Range(-1f, 1f),
+                        UnityEngine.Random.Range(-2f, 2f),
                         0f,
-                        UnityEngine.Random.Range(-1f, 1f)
+                        UnityEngine.Random.Range(-2f, 2f)
                     );
                     ecb.SetComponent(newEntity, LocalTransform.FromPosition(startPos + randomOffset));
 
