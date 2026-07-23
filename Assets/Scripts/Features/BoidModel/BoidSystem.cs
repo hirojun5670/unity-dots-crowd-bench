@@ -104,7 +104,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 }
 
                 // Weight
-                float separationWeight = 2.4f;
+                float separationWeight = 5.2f;
                 float alignmentWeight = 0.8f;
                 float cohesionWeight = 0.8f;
                 float targetWeight = 1.5f;
