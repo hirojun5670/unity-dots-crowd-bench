@@ -19,6 +19,8 @@ namespace UnityDotsCrowdLab.Features.Spawner
 
             foreach (var spawner in SystemAPI.Query<RefRW<SpawnerData>>())
             {
+                if (!spawner.ValueRO.IsActive) continue;
+
                 spawner.ValueRW.Timer += deltaTime;
                 if (spawner.ValueRW.Timer >= spawner.ValueRO.Interval)
                 {

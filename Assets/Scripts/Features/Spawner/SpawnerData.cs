@@ -5,6 +5,7 @@ namespace UnityDotsCrowdLab.Features.Spawner
 {
     public struct SpawnerData : IComponentData
     {
+        public bool IsActive;
         public Entity Prefab;
         public int FactionID;
         public float4 FactionColor;
