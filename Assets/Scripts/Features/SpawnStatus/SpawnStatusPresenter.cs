@@ -27,6 +27,12 @@ namespace UnityDotsCrowdLab.Features.SpawnStatus
                 view.SetCount(value);
             })
             .AddTo(disposable);
+
+            view.SpawnerActive.Subscribe(active =>
+            {
+                model.SetSpawnerActive(active);
+            })
+            .AddTo(disposable);
         }
 
         public void Dispose() => disposable.Dispose();
