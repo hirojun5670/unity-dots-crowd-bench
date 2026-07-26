@@ -1,9 +1,9 @@
 using Unity.Burst;
 using Unity.Entities;
 using UnityDotsCrowdLab.Features.CombatUnit;
-using UnityDotsCrowdLab.Features.Targeting;
+using UnityDotsCrowdLab.Features.Damage;
 
-namespace UnityDotsCrowdLab.Features.Features.Despawner
+namespace UnityDotsCrowdLab.Features.Despawner
 {
     /// <summary>
     /// healthが０以下のEntityを削除するSystem
