@@ -7,33 +7,30 @@ using UnityDotsCrowdLab.Features.Targeting;
 using UnityDotsCrowdLab.Core.Spatial;
 using UnityDotsCrowdLab.Features.Spawner;
 using Unity.Burst;
+using UnityDotsCrowdLab.Features.SpatialHash;
+using Unity.Jobs;
+using UnityDotsCrowdLab.Core.Job;
 
 namespace UnityDotsCrowdLab.Features.BoidModel
 {
+    /// <summary>
+    /// Boidモデルの挙動を計算するシステム     
+    /// </summary>
+    [UpdateAfter(typeof(SpatialHashBuildSystem))]
     [BurstCompile]
     public partial struct BoidSystem : ISystem
     {
-        NativeParallelMultiHashMap<int, Entity> spatialMap;
-
-        ComponentLookup<FactionData> factionLookup;
-        ComponentLookup<LocalTransform> transformLookup;
-        ComponentLookup<BoidVelocity> velocityLookup;
         ComponentLookup<UnitRadius> radiusLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            spatialMap = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent);
-            factionLookup = state.GetComponentLookup<FactionData>(isReadOnly: true);
-            transformLookup = state.GetComponentLookup<LocalTransform>(isReadOnly: true);
-            velocityLookup = state.GetComponentLookup<BoidVelocity>(isReadOnly: true);
             radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            spatialMap.Dispose();
         }
 
         [BurstCompile]
@@ -42,25 +39,40 @@ namespace UnityDotsCrowdLab.Features.BoidModel
             if (!SystemAPI.HasSingleton<TargetingConfig>()) return;
             var config = SystemAPI.GetSingleton<TargetingConfig>();
 
-            spatialMap.Clear();
-            factionLookup.Update(ref state);
-            transformLookup.Update(ref state);
-            velocityLookup.Update(ref state);
             radiusLookup.Update(ref state);
 
-            foreach (var (transform, faction, radius, entity) in
-                SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>>().WithAll<BoidVelocity>().WithEntityAccess())
-            {
-                int3 cellCoord = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
-                spatialMap.Add(SpatialHashUtility.ComputeHash(cellCoord), entity);
-            }
+            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
+            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
-            foreach (var (transform, faction, radius, moveTarget, combatTarget, velocity, entity) in
-                SystemAPI.Query<RefRW<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>, RefRO<MoveTarget>, RefRO<CombatTarget>, RefRW<BoidVelocity>>().WithEntityAccess())
-            {
-                int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
+            var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
-                int cellSpan = (int)math.ceil((radius.ValueRO.Radius * 2f) / config.CellSize);
+            var handle = new BoidModelJob
+            {
+                radiusLookup = radiusLookup,
+                spatialMap = singleton.SpatialMap,
+                snapshotMap = singleton.SnapshotMap,
+                cellSize = config.CellSize,
+                deltaTime = SystemAPI.Time.DeltaTime,
+            }.ScheduleParallel(combined);
+
+            state.Dependency = handle;
+            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
+        }
+
+        [BurstCompile]
+        public partial struct BoidModelJob : IJobEntity
+        {
+            [ReadOnly] public ComponentLookup<UnitRadius> radiusLookup;
+            [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
+            [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
+            [ReadOnly] public float cellSize;
+            [ReadOnly] public float deltaTime;
+
+            public void Execute(Entity entity, ref LocalTransform transform, ref BoidVelocity velocity, in FactionData faction, in UnitRadius radius, in MoveTarget moveTarget, in CombatTarget combatTarget)
+            {
+                int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.Position, cellSize);
+
+                int cellSpan = (int)math.ceil((radius.Radius * 2f) / cellSize);
                 cellSpan = math.max(cellSpan, 1); // 最低でも隣接1セルは見る
 
                 float3 separationForce = float3.zero;
@@ -77,16 +89,17 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                             foreach (var other in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (other == entity) continue;
-                                if (faction.ValueRO.Team != factionLookup[other].Team) continue;
-                                float3 otherPosition = transformLookup[other].Position;
+                                if (!snapshotMap.TryGetValue(other, out var otherSnap)) continue;
+                                if (faction.Team != otherSnap.Team) continue;
+                                float3 otherPosition = otherSnap.Position;
                                 // 分離
-                                float3 separationVector = transform.ValueRO.Position - otherPosition;
+                                float3 separationVector = transform.Position - otherPosition;
                                 float distanceSq = math.lengthsq(separationVector);
                                 float reciprocalDistanceSq = distanceSq > 1e-6f ? 1f / distanceSq : 0f; // 0除算防止
                                 separationForce += separationVector * reciprocalDistanceSq;
 
                                 // 整列
-                                float3 otherVelocity = velocityLookup[other].Value;
+                                float3 otherVelocity = otherSnap.Velocity;
                                 alignmentForce += otherVelocity;
 
                                 // 結合
@@ -100,7 +113,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 {
                     alignmentForce /= neighborCount;
                     cohesionCenter /= neighborCount;
-                    cohesionForce = cohesionCenter - transform.ValueRO.Position;
+                    cohesionForce = cohesionCenter - transform.Position;
                 }
 
                 // Weight
@@ -112,16 +125,25 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 // ターゲットへの力を計算
                 float3 targetForce = float3.zero;
                 // ターゲットはCombatTargetが優先されるが、なければMoveTargetを使用する
-                Entity targetEntity = combatTarget.ValueRO.Value != Entity.Null
-                    ? combatTarget.ValueRO.Value
-                    : moveTarget.ValueRO.TargetEntity;
-                if (targetEntity != Entity.Null && transformLookup.HasComponent(targetEntity))
+                Entity targetEntity = combatTarget.Value != Entity.Null
+                    ? combatTarget.Value
+                    : moveTarget.TargetEntity;
+                if (targetEntity != Entity.Null)
                 {
-                    float3 toTarget = transformLookup[targetEntity].Position - transform.ValueRO.Position;
+                    float3 targetPosition = float3.zero;
+                    if (snapshotMap.ContainsKey(targetEntity))
+                    {
+                        targetPosition = snapshotMap[targetEntity].Position;
+                    }
+                    else
+                    {
+                        targetPosition = moveTarget.TargetPosition;
+                    }
+                    float3 toTarget = targetPosition - transform.Position;
                     float targetDistance = math.length(toTarget);
 
                     // 自分とターゲットの半径分は重ならないよう停止距離を設ける
-                    float stopDistance = radius.ValueRO.Radius;
+                    float stopDistance = radius.Radius;
                     if (radiusLookup.HasComponent(targetEntity))
                     {
                         stopDistance += radiusLookup[targetEntity].Radius;
@@ -130,21 +152,21 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                     // ターゲットが停止距離より遠ければ、ターゲットに向かう力を加える
                     if (targetDistance > stopDistance && targetDistance > 0.0001f)
                     {
-                        float3 desiredVelocity = (toTarget / targetDistance) * moveTarget.ValueRO.Speed;
-                        targetForce = desiredVelocity - velocity.ValueRO.Value;
+                        float3 desiredVelocity = (toTarget / targetDistance) * moveTarget.Speed;
+                        targetForce = desiredVelocity - velocity.Value;
                     }
                     else if (targetDistance > 0.0001f)
                     {
                         // ターゲットが停止距離内に入った場合は、ターゲットから押し返す力を加える
                         float overlap = stopDistance - targetDistance;
                         float overlapRatio = math.saturate(overlap / math.max(stopDistance, 0.0001f));
-                        float3 pushBack = -(toTarget / targetDistance) * (moveTarget.ValueRO.Speed * overlapRatio);
-                        targetForce = pushBack - velocity.ValueRO.Value;
+                        float3 pushBack = -(toTarget / targetDistance) * (moveTarget.Speed * overlapRatio);
+                        targetForce = pushBack - velocity.Value;
                     }
                     else
                     {
                         // 完全に同一座標の場合は少なくとも減速して静止へ向かわせる
-                        targetForce = -velocity.ValueRO.Value;
+                        targetForce = -velocity.Value;
                     }
                 }
 
@@ -153,16 +175,16 @@ namespace UnityDotsCrowdLab.Features.BoidModel
 
                 // 速度制限を適用
                 float currentSpeed = math.length(boidForce);
-                if (currentSpeed > moveTarget.ValueRO.Speed && currentSpeed > 0.0001f)
+                if (currentSpeed > moveTarget.Speed && currentSpeed > 0.0001f)
                 {
-                    boidForce = (boidForce / currentSpeed) * moveTarget.ValueRO.Speed;
+                    boidForce = (boidForce / currentSpeed) * moveTarget.Speed;
                     // 速度制限処理後の実速度で再計算
                     currentSpeed = math.length(boidForce);
                 }
 
                 // 速度と位置を更新
-                velocity.ValueRW.Value = boidForce;
-                transform.ValueRW.Position += boidForce * state.WorldUnmanaged.Time.DeltaTime;
+                velocity.Value = boidForce;
+                transform.Position += boidForce * deltaTime;
 
 
                 // 進行方向に回転させる
@@ -172,10 +194,10 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                     quaternion targetRotation = quaternion.LookRotationSafe(forward, math.up());
                     float turnSpeed = 3f;
                     // 回転を補間して滑らかにする
-                    transform.ValueRW.Rotation = math.slerp(
-                        transform.ValueRO.Rotation,
+                    transform.Rotation = math.slerp(
+                        transform.Rotation,
                         targetRotation,
-                        math.saturate(turnSpeed * state.WorldUnmanaged.Time.DeltaTime)
+                        math.saturate(turnSpeed * deltaTime)
                     );
                 }
             }
