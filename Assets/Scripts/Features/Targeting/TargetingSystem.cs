@@ -4,6 +4,7 @@ using Unity.Transforms;
 using UnityDotsCrowdLab.Features.Spawner;
 using UnityDotsCrowdLab.Features.CombatUnit;
 using Unity.Mathematics;
+using UnityDotsCrowdLab.Features.BoidModel;
 
 namespace UnityDotsCrowdLab.Features.Targeting
 {
@@ -11,6 +12,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
     /// 各Entityに対して索敵を行うSystem
     /// 自分の陣営と異なるEntityと距離との距離を計算し、射程内かつ一番近いものを探す
     /// </summary>
+    [UpdateAfter(typeof(BoidSystem))]
     [BurstCompile]
     public partial struct TargetingSystem : ISystem
     {

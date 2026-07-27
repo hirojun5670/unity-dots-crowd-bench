@@ -4,13 +4,15 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityDotsCrowdLab.Features.CombatUnit;
 using UnityDotsCrowdLab.Features.Spawner;
+using UnityDotsCrowdLab.Features.Targeting;
 
-
-namespace UnityDotsCrowdLab.Features.Targeting
+namespace UnityDotsCrowdLab.Features.Damage
 {
     /// <summary>
-    /// 
+    /// ターゲットに対してダメージを与えるシステム
     /// </summary>
+    [UpdateAfter(typeof(TargetingSystem))]
+    [UpdateAfter(typeof(SpatialHashTargetingSystem))]
     [BurstCompile]
     public partial struct DamageSystem : ISystem
     {

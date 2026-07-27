@@ -6,35 +6,31 @@ using UnityDotsCrowdLab.Features.Spawner;
 using Unity.Mathematics;
 using Unity.Collections;
 using UnityDotsCrowdLab.Core.Spatial;
+using UnityDotsCrowdLab.Features.SpatialHash;
+using UnityDotsCrowdLab.Core.Job;
+using Unity.Jobs;
+using UnityDotsCrowdLab.Features.BoidModel;
 
 namespace UnityDotsCrowdLab.Features.Targeting
 {
     /// <summary>
     /// 空間ハッシュを用いたターゲティングを行う
     /// </summary>
+    [UpdateAfter(typeof(BoidSystem))]
     [BurstCompile]
     public partial struct SpatialHashTargetingSystem : ISystem
     {
-        NativeParallelMultiHashMap<int, Entity> spatialMap;
-
-        ComponentLookup<FactionData> factionLookup;
-        ComponentLookup<LocalTransform> transformLookup;
         ComponentLookup<UnitRadius> radiusLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            spatialMap = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent);
-
-            factionLookup = state.GetComponentLookup<FactionData>(isReadOnly: true);
-            transformLookup = state.GetComponentLookup<LocalTransform>(isReadOnly: true);
             radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            spatialMap.Dispose();
         }
 
         [BurstCompile]
@@ -50,32 +46,44 @@ namespace UnityDotsCrowdLab.Features.Targeting
             float cellSize = config.CellSize;
             if (cellSize <= 0f)
                 return;
-            var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);
-            spatialMap.Clear();
-            factionLookup.Update(ref state);
-            transformLookup.Update(ref state);
+
             radiusLookup.Update(ref state);
 
-            // 空間ハッシュの構築
-            foreach (var (transform, faction, radius, entity) in
-                SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>>().WithEntityAccess())
+            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
+            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
+
+            var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
+
+            var handle = new SpatialHashTargetingJob
             {
-                int3 cellCoord = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, cellSize);
-                var hash = SpatialHashUtility.ComputeHash(cellCoord);
-                spatialMap.Add(hash, entity);
-            }
+                radiusLookup = radiusLookup,
+                spatialMap = singleton.SpatialMap,
+                snapshotMap = singleton.SnapshotMap,
+                cellSize = cellSize,
+            }.ScheduleParallel(combined);
 
+            state.Dependency = handle;
+            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
+        }
 
-            foreach (var (transform, faction, radius, attack, entity) in
-                        SystemAPI.Query<RefRO<LocalTransform>, RefRO<FactionData>, RefRO<UnitRadius>, RefRO<AttackPowerData>>().WithEntityAccess())
+        [BurstCompile]
+        public partial struct SpatialHashTargetingJob : IJobEntity
+        {
+            [ReadOnly] public ComponentLookup<UnitRadius> radiusLookup;
+            [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
+            [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
+            [ReadOnly] public float cellSize;
+
+            public void Execute(Entity entity, ref CombatTarget combatTarget, in LocalTransform transform, in FactionData faction, in UnitRadius radius, in AttackPowerData attack)
             {
                 Entity nearest = Entity.Null;
                 float nearestDistSq = float.MaxValue;
-                int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.ValueRO.Position, config.CellSize);
-                float estimatedMaxTargetRadius = 0.5f; // 目安としての最大ターゲット半径、必要に応じて調整
-                float maxPossibleDistance = attack.ValueRO.Range + radius.ValueRO.Radius + estimatedMaxTargetRadius;
-                int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
+                if (!snapshotMap.TryGetValue(entity, out var mySnap)) return;
 
+                int3 myCell = SpatialHashUtility.ComputeCellCoord(mySnap.Position, cellSize);
+                float estimatedMaxTargetRadius = 0.5f; // 目安としての最大ターゲット半径、必要に応じて調整
+                float maxPossibleDistance = attack.Range + radius.Radius + estimatedMaxTargetRadius;
+                int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
 
                 for (int dx = -cellSpan; dx <= cellSpan; dx++)
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
@@ -86,15 +94,21 @@ namespace UnityDotsCrowdLab.Features.Targeting
                             foreach (var candidate in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (candidate == entity) continue;
-                                if (faction.ValueRO.Team == factionLookup[candidate].Team) continue;
+                                if (snapshotMap.TryGetValue(candidate, out var candidateSnap))
+                                {
+                                    if (faction.Team == candidateSnap.Team) continue;
+                                }
+                                else
+                                {
+                                    continue;
+                                }
 
-                                var targetTransform = transformLookup[candidate];
+
                                 var targetRadius = radiusLookup[candidate];
 
-                                float distSq = math.distancesq(transform.ValueRO.Position, targetTransform.Position);
-                                float maxAttackDistance = attack.ValueRO.Range + radius.ValueRO.Radius + targetRadius.Radius;
+                                float distSq = math.distancesq(mySnap.Position, candidateSnap.Position);
+                                float maxAttackDistance = attack.Range + radius.Radius + targetRadius.Radius;
                                 if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
-
 
                                 if (distSq < nearestDistSq)
                                 {
@@ -104,12 +118,8 @@ namespace UnityDotsCrowdLab.Features.Targeting
                             }
                         }
 
-                ecb.SetComponent(entity, new CombatTarget { Value = nearest });
+                combatTarget.Value = nearest;
             }
-
-            ecb.Playback(state.EntityManager);
-            ecb.Dispose();
-
         }
     }
 }
