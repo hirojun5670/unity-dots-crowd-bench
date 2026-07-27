@@ -28,8 +28,16 @@ namespace UnityDotsCrowdLab.Features.CombatUnit
             foreach (var moveTarget in SystemAPI.Query<RefRW<MoveTarget>>())
             {
                 var e = moveTarget.ValueRO.TargetEntity;
-                if (e != Entity.Null && transformLookup.HasComponent(e))
+                if (e != Entity.Null)
+                    continue;
+                if (transformLookup.HasComponent(e))
+                {
                     moveTarget.ValueRW.TargetPosition = transformLookup[e].Position;
+                }
+                else
+                {
+                    moveTarget.ValueRW.TargetEntity = Entity.Null;
+                }
             }
         }
     }
