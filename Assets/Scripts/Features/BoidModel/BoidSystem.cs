@@ -132,9 +132,9 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 if (targetEntity != Entity.Null)
                 {
                     float3 targetPosition = float3.zero;
-                    if (snapshotMap.ContainsKey(targetEntity))
+                    if (snapshotMap.TryGetValue(targetEntity, out var targetEntitySnap))
                     {
-                        targetPosition = snapshotMap[targetEntity].Position;
+                        targetPosition = targetEntitySnap.Position;
                     }
                     else
                     {
