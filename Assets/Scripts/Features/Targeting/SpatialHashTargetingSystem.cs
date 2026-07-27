@@ -101,10 +101,10 @@ namespace UnityDotsCrowdLab.Features.Targeting
                                     continue;
                                 }
 
-                                var targetTransform = snapshotMap[candidate];
+
                                 var targetRadius = radiusLookup[candidate];
 
-                                float distSq = math.distancesq(transform.Position, targetTransform.Position);
+                                float distSq = math.distancesq(transform.Position, candidateSnap.Position);
                                 float maxAttackDistance = attack.Range + radius.Radius + targetRadius.Radius;
                                 if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
 
