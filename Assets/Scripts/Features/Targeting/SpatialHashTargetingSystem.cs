@@ -78,7 +78,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
             {
                 Entity nearest = Entity.Null;
                 float nearestDistSq = float.MaxValue;
-                int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.Position, cellSize);
+                if (!snapshotMap.TryGetValue(entity, out var mySnap)) return;
+
+                int3 myCell = SpatialHashUtility.ComputeCellCoord(mySnap.Position, cellSize);
                 float estimatedMaxTargetRadius = 0.5f; // 目安としての最大ターゲット半径、必要に応じて調整
                 float maxPossibleDistance = attack.Range + radius.Radius + estimatedMaxTargetRadius;
                 int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
@@ -104,7 +106,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
 
                                 var targetRadius = radiusLookup[candidate];
 
-                                float distSq = math.distancesq(transform.Position, candidateSnap.Position);
+                                float distSq = math.distancesq(mySnap.Position, candidateSnap.Position);
                                 float maxAttackDistance = attack.Range + radius.Radius + targetRadius.Radius;
                                 if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
 
