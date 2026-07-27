@@ -40,6 +40,11 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
+            // 全てのジョブの終了を待つ
+            if (SystemAPI.HasSingleton<SharedJobDependency>())
+                SystemAPI.GetSingleton<SharedJobDependency>().Handle.Complete();
+            state.Dependency.Complete();
+
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
             singleton.SpatialMap.Dispose();
             singleton.SnapshotMap.Dispose();
