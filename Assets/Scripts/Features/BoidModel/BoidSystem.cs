@@ -39,6 +39,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         {
             if (!SystemAPI.HasSingleton<TargetingConfig>()) return;
             var config = SystemAPI.GetSingleton<TargetingConfig>();
+            if (config.CellSize <= 0f) return;
 
             radiusLookup.Update(ref state);
 
