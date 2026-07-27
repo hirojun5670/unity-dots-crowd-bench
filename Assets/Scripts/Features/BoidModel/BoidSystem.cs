@@ -17,6 +17,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
     /// Boidモデルの挙動を計算するシステム     
     /// </summary>
     [UpdateAfter(typeof(SpatialHashBuildSystem))]
+    [UpdateAfter(typeof(UpdateMoveTargetPositionSystem))]
     [BurstCompile]
     public partial struct BoidSystem : ISystem
     {
