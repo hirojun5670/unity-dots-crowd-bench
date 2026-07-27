@@ -9,7 +9,6 @@ Boid 理論による移動制御、索敵アルゴリズム（総当たり / 空
 
 ### スクリーンショット
 ![スクリーンショット1](./docs/unity-dots-crowd-bench_ss.jpg)
-![スクリーンショット2](./docs/unity-dots-crowd-bench%202026_07_23%2016_09_47.jpg)
 
 ## 概要
 - 2陣営のユニットが出現し、Boid 理論（分離・整列・結合）で群れを形成しながら相手陣営と交戦します。
@@ -38,6 +37,36 @@ Spawner → Targeting（BruteForce / SpatialHash）→ Boid → Damage → Despa
 ECS から情報を取得する Model、情報を表示する UIView（UI Toolkit）、それらをつなぐ Presenter で MVP を構成しています。
 Model は Entity の情報収集に専念し、UIView は受け取った情報の表示のみを担当します。
 依存関係は VContainer で注入しています。
+
+## パフォーマンス検証（2026/07/27）
+![スクリーンショット2](./docs/unity-dots-crowd-bench_2026-07-27_115621.jpg)
+
+### 検証環境
+- 10,000 体の Entity
+- ユニットサイズ: 1f × 1f
+- cellSize = 2f
+- 空間ハッシュ索敵の CellSpan = 1（自身のセルと周囲 26 セル、計 27 セル）
+- SpatialHashTargetingSystem と BoidSystem を Job 化し、空間ハッシュの計算部分を共通化しました。[#33](https://github.com/hirojun5670/unity-dots-crowd-bench/pull/33)
+
+### 検証結果
+| System | Main Thread | Worker Thread (1〜3) |
+|---|---:|---:|
+| SpatialHashTargetingSystem | 0.01 ms 以下 | 2.89 ms |
+| BoidSystem | 0.01 ms 以下 | 2.83 ms |
+| SpatialHashBuildSystem | 0.04 ms | 0.42 ms |
+| DamageSystem | 6.33 ms | - |
+
+※ Development Build で計測しました。FPS はおおむね 100 前後でした。
+計算量の多かったシステムを Worker Thread で並列処理したことで、10,000 体の Entity でも Main Thread には十分な余裕がありました。
+一方で、処理数が増えたことで、Job 化されていない DamageSystem が新たなボトルネックになりました。
+
+### 最適化の過程
+- 空間ハッシュ計算を別 System に切り出し、Job 化しました。
+- 空間ハッシュ計算時に位置情報のスナップショットを記録し、SpatialHashTargetingSystem と BoidSystem で再利用する構成に変更しました。
+- メインスレッドで実行していた SpatialHashTargetingSystem と BoidSystem の処理を Job 化して並列化しました。
+
+## 今後の展望
+- DamageSystemのJob化対応 [#34](https://github.com/hirojun5670/unity-dots-crowd-bench/issues/34)
 
 ## パフォーマンス検証（2026/07/23）
 ### 検証環境
