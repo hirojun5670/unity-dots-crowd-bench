@@ -16,6 +16,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
     /// <summary>
     /// Boidモデルの挙動を計算するシステム     
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(SpatialHashBuildSystem))]
     [UpdateAfter(typeof(UpdateMoveTargetPositionSystem))]
     [BurstCompile]

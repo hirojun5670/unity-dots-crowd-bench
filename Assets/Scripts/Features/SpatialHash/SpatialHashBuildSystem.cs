@@ -15,6 +15,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
     /// <summary>
     /// 空間ハッシュを構築するシステム
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(SpawnerSystem))]
     [BurstCompile]
     public partial struct SpatialHashBuildSystem : ISystem

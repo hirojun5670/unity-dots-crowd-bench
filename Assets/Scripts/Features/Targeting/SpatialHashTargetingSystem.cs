@@ -16,6 +16,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
     /// <summary>
     /// 空間ハッシュを用いたターゲティングを行う
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(BoidSystem))]
     [BurstCompile]
     public partial struct SpatialHashTargetingSystem : ISystem

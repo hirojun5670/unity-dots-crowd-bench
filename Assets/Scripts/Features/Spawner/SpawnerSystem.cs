@@ -7,7 +7,10 @@ using UnityDotsCrowdLab.Features.CombatUnit;
 
 namespace UnityDotsCrowdLab.Features.Spawner
 {
-
+    /// <summary>
+    /// SpawnerDataに基づいてEntityを生成するSystem
+    /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [BurstCompile]
     public partial struct SpawnerSystem : ISystem
     {
