@@ -61,9 +61,6 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             var config = SystemAPI.GetSingleton<TargetingConfig>();
 
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            // 全てのJobの終了を待つ
-            sharedJobhandle.Complete();
-
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
             var singleton = SystemAPI.GetSingletonRW<SpatialHashMapSingleton>();
