@@ -22,12 +22,9 @@ namespace UnityDotsCrowdLab.Features.BoidModel
     [BurstCompile]
     public partial struct BoidSystem : ISystem
     {
-        ComponentLookup<UnitRadius> radiusLookup;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
         [BurstCompile]
@@ -42,8 +39,6 @@ namespace UnityDotsCrowdLab.Features.BoidModel
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             if (config.CellSize <= 0f) return;
 
-            radiusLookup.Update(ref state);
-
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
@@ -51,7 +46,6 @@ namespace UnityDotsCrowdLab.Features.BoidModel
 
             var handle = new BoidModelJob
             {
-                radiusLookup = radiusLookup,
                 spatialMap = singleton.SpatialMap,
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = config.CellSize,
@@ -65,7 +59,6 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         [BurstCompile]
         public partial struct BoidModelJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<UnitRadius> radiusLookup;
             [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
@@ -147,9 +140,9 @@ namespace UnityDotsCrowdLab.Features.BoidModel
 
                     // 自分とターゲットの半径分は重ならないよう停止距離を設ける
                     float stopDistance = radius.Radius;
-                    if (radiusLookup.HasComponent(targetEntity))
+                    if (snapshotMap.TryGetValue(targetEntity, out var targetRadiusSnap))
                     {
-                        stopDistance += radiusLookup[targetEntity].Radius;
+                        stopDistance += targetRadiusSnap.Radius;
                     }
 
                     // ターゲットが停止距離より遠ければ、ターゲットに向かう力を加える
