@@ -1,4 +1,3 @@
-using Unity.Burst;
 using Unity.Entities;
 
 namespace UnityDotsCrowdLab.Core.Simulation
