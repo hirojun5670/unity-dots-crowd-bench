@@ -1,6 +1,8 @@
 using Unity.Entities;
 using Unity.Burst;
 using UnityDotsCrowdLab.Features.Targeting;
+using UnityDotsCrowdLab.Core.Job;
+using Unity.Jobs;
 
 namespace UnityDotsCrowdLab.Features.SpatialHash
 {
@@ -16,7 +18,14 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
+            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
+
+            state.Dependency = combined;
+            SystemAPI.SetSingleton(new SharedJobDependency { Handle = combined });
+
             var singleton = SystemAPI.GetSingletonRW<SpatialHashMapSingleton>();
+            singleton.ValueRW.SetReadBufferCompleteHandle(combined);
             singleton.ValueRW.SwapBuffers();
         }
     }
