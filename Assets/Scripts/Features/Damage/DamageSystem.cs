@@ -48,6 +48,8 @@ namespace UnityDotsCrowdLab.Features.Damage
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
+            combined.Complete();
+
             damageMap.Clear();
             // entity数に応じて容量を調整する
             int count = SystemAPI.QueryBuilder().WithAll<LocalTransform, CombatTarget>().Build().CalculateEntityCount();
