@@ -21,12 +21,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
     [BurstCompile]
     public partial struct SpatialHashTargetingSystem : ISystem
     {
-        ComponentLookup<UnitRadius> radiusLookup;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            radiusLookup = state.GetComponentLookup<UnitRadius>(isReadOnly: true);
         }
 
         [BurstCompile]
@@ -48,8 +45,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
             if (cellSize <= 0f)
                 return;
 
-            radiusLookup.Update(ref state);
-
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
@@ -57,7 +52,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
 
             var handle = new SpatialHashTargetingJob
             {
-                radiusLookup = radiusLookup,
                 spatialMap = singleton.SpatialMap,
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = cellSize,
@@ -70,7 +64,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
         [BurstCompile]
         public partial struct SpatialHashTargetingJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<UnitRadius> radiusLookup;
             [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
@@ -105,10 +98,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
                                 }
 
 
-                                var targetRadius = radiusLookup[candidate];
-
+                                var targetRadius = candidateSnap.Radius;
                                 float distSq = math.distancesq(mySnap.Position, candidateSnap.Position);
-                                float maxAttackDistance = attack.Range + radius.Radius + targetRadius.Radius;
+                                float maxAttackDistance = attack.Range + radius.Radius + targetRadius;
                                 if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
 
                                 if (distSq < nearestDistSq)
