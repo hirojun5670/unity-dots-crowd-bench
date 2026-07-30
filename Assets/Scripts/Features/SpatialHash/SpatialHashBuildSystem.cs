@@ -29,8 +29,11 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             var entity = state.EntityManager.CreateEntity();
             state.EntityManager.AddComponentData(entity, new SpatialHashMapSingleton
             {
-                SpatialMap = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
-                SnapshotMap = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
+                CurrentReadBufferIndex = 0,
+                SpatialMapBuffer0 = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
+                SnapshotMapBuffer0 = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
+                SpatialMapBuffer1 = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
+                SnapshotMapBuffer1 = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
             });
 
             // 依存関係を管理するシングルトンEntityを作成
@@ -47,8 +50,10 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             state.Dependency.Complete();
 
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
-            singleton.SpatialMap.Dispose();
-            singleton.SnapshotMap.Dispose();
+            singleton.SpatialMapBuffer0.Dispose();
+            singleton.SnapshotMapBuffer0.Dispose();
+            singleton.SpatialMapBuffer1.Dispose();
+            singleton.SnapshotMapBuffer1.Dispose();
         }
 
         [BurstCompile]
@@ -64,22 +69,23 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
-            var singleton = SystemAPI.GetSingletonRW<SpatialHashMapSingleton>();
-            singleton.ValueRW.SpatialMap.Clear();
-            singleton.ValueRW.SnapshotMap.Clear();
-            int count = SystemAPI.QueryBuilder().WithAll<LocalTransform, BoidVelocity>().Build().CalculateEntityCount();
-            // entity数に応じて容量を調整する
-            int required = math.ceilpow2(math.max(1, count));
-            if (singleton.ValueRW.SnapshotMap.Capacity < required)
-                singleton.ValueRW.SnapshotMap.Capacity = required;
 
-            if (singleton.ValueRW.SpatialMap.Capacity < required)
-                singleton.ValueRW.SpatialMap.Capacity = required;
+            var singleton = SystemAPI.GetSingletonRW<SpatialHashMapSingleton>();
+
+            singleton.ValueRW.CompleteNextWriteBufferDependency();
+
+            singleton.ValueRW.WriteSpatialMap.Clear();
+            singleton.ValueRW.WriteSnapshotMap.Clear();
+
+            // entity数に応じて容量を調整する
+            int count = SystemAPI.QueryBuilder().WithAll<LocalTransform, BoidVelocity>().Build().CalculateEntityCount();
+            int required = math.ceilpow2(math.max(1, count));
+            singleton.ValueRW.SetWriteBufferCapacity(required);
 
             var handle = new BuildSpatialHashJob
             {
-                SpatialMap = singleton.ValueRW.SpatialMap.AsParallelWriter(),
-                SnapshotMap = singleton.ValueRW.SnapshotMap.AsParallelWriter(),
+                SpatialMap = singleton.ValueRW.WriteSpatialMap.AsParallelWriter(),
+                SnapshotMap = singleton.ValueRW.WriteSnapshotMap.AsParallelWriter(),
                 CellSize = config.CellSize,
             }.ScheduleParallel(combined);
 
@@ -93,6 +99,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
     {
         public float3 Position;
         public float3 Velocity;
+        public float Radius;
         public int Team;
     }
 
@@ -104,7 +111,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         public NativeParallelHashMap<Entity, BoidSnapshot>.ParallelWriter SnapshotMap;
         [ReadOnly] public float CellSize;
 
-        public void Execute(Entity entity, in LocalTransform transform, in BoidVelocity velocity, in FactionData faction)
+        public void Execute(Entity entity, in LocalTransform transform, in BoidVelocity velocity, in UnitRadius unitRadius, in FactionData faction)
         {
             int cellHash = SpatialHashUtility.ComputeHash(
                 SpatialHashUtility.ComputeCellCoord(transform.Position, CellSize));
@@ -115,6 +122,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             {
                 Position = transform.Position,
                 Velocity = velocity.Value,
+                Radius = unitRadius.Radius,
                 Team = faction.Team
             });
         }
