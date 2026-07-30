@@ -8,6 +8,7 @@ namespace UnityDotsCrowdLab.Features.CombatUnit
     /// <summary>
     /// MoveTarget.TargetEntityの位置をMoveTarget.TargetPositionに反映するSystem
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(SpawnerSystem))]
     [BurstCompile]
     public partial struct UpdateMoveTargetPositionSystem : ISystem

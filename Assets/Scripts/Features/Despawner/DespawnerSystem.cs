@@ -8,6 +8,7 @@ namespace UnityDotsCrowdLab.Features.Despawner
     /// <summary>
     /// healthが０以下のEntityを削除するSystem
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(DamageSystem))]
     [BurstCompile]
     public partial struct DespawnerSystem : ISystem

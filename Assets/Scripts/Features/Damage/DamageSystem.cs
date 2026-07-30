@@ -13,6 +13,7 @@ namespace UnityDotsCrowdLab.Features.Damage
     /// <summary>
     /// ターゲットに対してダメージを与えるシステム
     /// </summary>
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(TargetingSystem))]
     [UpdateAfter(typeof(SpatialHashTargetingSystem))]
     [BurstCompile]
