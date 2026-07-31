@@ -127,9 +127,11 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 if (targetEntity != Entity.Null)
                 {
                     float3 targetPosition = float3.zero;
+                    float stopDistance = radius.Radius;
                     if (snapshotMap.TryGetValue(targetEntity, out var targetEntitySnap))
                     {
                         targetPosition = targetEntitySnap.Position;
+                        stopDistance += targetEntitySnap.Radius;
                     }
                     else
                     {
@@ -137,13 +139,6 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                     }
                     float3 toTarget = targetPosition - transform.Position;
                     float targetDistance = math.length(toTarget);
-
-                    // 自分とターゲットの半径分は重ならないよう停止距離を設ける
-                    float stopDistance = radius.Radius;
-                    if (snapshotMap.TryGetValue(targetEntity, out var targetRadiusSnap))
-                    {
-                        stopDistance += targetRadiusSnap.Radius;
-                    }
 
                     // ターゲットが停止距離より遠ければ、ターゲットに向かう力を加える
                     if (targetDistance > stopDistance && targetDistance > 0.0001f)
