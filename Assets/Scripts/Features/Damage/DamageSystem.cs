@@ -1,8 +1,8 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Mathematics;
 using Unity.Transforms;
 using UnityDotsCrowdLab.Core.Job;
 using UnityDotsCrowdLab.Features.CombatUnit;
@@ -19,25 +19,15 @@ namespace UnityDotsCrowdLab.Features.Damage
     [BurstCompile]
     public partial struct DamageSystem : ISystem
     {
-        private NativeParallelMultiHashMap<Entity, float> damageMap;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            damageMap = new NativeParallelMultiHashMap<Entity, float>(1000, Allocator.Persistent);
         }
+
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            // 全てのジョブの終了を待つ
-            if (SystemAPI.HasSingleton<SharedJobDependency>())
-                SystemAPI.GetSingleton<SharedJobDependency>().Handle.Complete();
-            state.Dependency.Complete();
-
-            if (damageMap.IsCreated)
-            {
-                damageMap.Dispose();
-            }
         }
 
         [BurstCompile]
@@ -48,14 +38,9 @@ namespace UnityDotsCrowdLab.Features.Damage
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
-            combined.Complete();
-
-            damageMap.Clear();
             // entity数に応じて容量を調整する
             int count = SystemAPI.QueryBuilder().WithAll<LocalTransform, CombatTarget>().Build().CalculateEntityCount();
-            int required = math.ceilpow2(math.max(1, count));
-            if (damageMap.Capacity < required)
-                damageMap.Capacity = required;
+            NativeParallelMultiHashMap<Entity, float> damageMap = new NativeParallelMultiHashMap<Entity, float>(math.ceilpow2(math.max(1, count)), Allocator.TempJob);
 
             // ダメージマップを構築
             var buildDamageMapJobHandle = new BuildDamageMapJob
@@ -70,8 +55,10 @@ namespace UnityDotsCrowdLab.Features.Damage
                 damageMap = damageMap,
             }.ScheduleParallel(buildDamageMapJobHandle);
 
-            state.Dependency = applyDamageJobHandle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = applyDamageJobHandle });
+            var disposeHandle = damageMap.Dispose(applyDamageJobHandle);
+
+            state.Dependency = disposeHandle;
+            SystemAPI.SetSingleton(new SharedJobDependency { Handle = disposeHandle });
         }
 
         [BurstCompile]
