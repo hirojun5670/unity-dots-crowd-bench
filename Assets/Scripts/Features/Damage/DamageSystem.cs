@@ -58,7 +58,7 @@ namespace UnityDotsCrowdLab.Features.Damage
             var disposeHandle = damageMap.Dispose(applyDamageJobHandle);
 
             state.Dependency = disposeHandle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = disposeHandle });
+            SystemAPI.SetSingleton(new SharedJobDependency { Handle = applyDamageJobHandle });
         }
 
         [BurstCompile]
