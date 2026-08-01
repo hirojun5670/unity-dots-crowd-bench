@@ -33,6 +33,9 @@ namespace UnityDotsCrowdLab.Features.Damage
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.HasSingleton<SharedJobDependency>())
+                return;
+
             float deltaTime = SystemAPI.Time.DeltaTime;
 
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;

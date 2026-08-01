@@ -34,6 +34,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.HasSingleton<SharedJobDependency>())
+                return;
+
             if (!SystemAPI.HasSingleton<TargetingConfig>())
                 return;
 
