@@ -59,10 +59,10 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<TargetingConfig>())
-            {
+            if (!SystemAPI.HasSingleton<SharedJobDependency>())
                 return;
-            }
+            if (!SystemAPI.HasSingleton<TargetingConfig>())
+                return;
 
             var config = SystemAPI.GetSingleton<TargetingConfig>();
 

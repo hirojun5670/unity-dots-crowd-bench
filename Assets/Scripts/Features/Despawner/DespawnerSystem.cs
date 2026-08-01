@@ -18,6 +18,9 @@ namespace UnityDotsCrowdLab.Features.Despawner
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.HasSingleton<SharedJobDependency>())
+                return;
+
             var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
             var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 

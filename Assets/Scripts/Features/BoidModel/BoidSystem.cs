@@ -35,7 +35,12 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<TargetingConfig>()) return;
+            if (!SystemAPI.HasSingleton<SharedJobDependency>())
+                return;
+
+            if (!SystemAPI.HasSingleton<TargetingConfig>())
+                return;
+
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             if (config.CellSize <= 0f) return;
 
