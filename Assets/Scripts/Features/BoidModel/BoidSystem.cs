@@ -8,8 +8,6 @@ using UnityDotsCrowdLab.Core.Spatial;
 using UnityDotsCrowdLab.Features.Spawner;
 using Unity.Burst;
 using UnityDotsCrowdLab.Features.SpatialHash;
-using Unity.Jobs;
-using UnityDotsCrowdLab.Core.Job;
 
 namespace UnityDotsCrowdLab.Features.BoidModel
 {
@@ -35,17 +33,11 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<SharedJobDependency>())
-                return;
-
             if (!SystemAPI.HasSingleton<TargetingConfig>())
                 return;
 
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             if (config.CellSize <= 0f) return;
-
-            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
@@ -55,10 +47,9 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = config.CellSize,
                 deltaTime = SystemAPI.Time.DeltaTime,
-            }.ScheduleParallel(combined);
+            }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
         }
 
         [BurstCompile]

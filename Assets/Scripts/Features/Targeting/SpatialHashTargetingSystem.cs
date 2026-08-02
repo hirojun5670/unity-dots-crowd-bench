@@ -7,8 +7,6 @@ using Unity.Mathematics;
 using Unity.Collections;
 using UnityDotsCrowdLab.Core.Spatial;
 using UnityDotsCrowdLab.Features.SpatialHash;
-using UnityDotsCrowdLab.Core.Job;
-using Unity.Jobs;
 using UnityDotsCrowdLab.Features.BoidModel;
 
 namespace UnityDotsCrowdLab.Features.Targeting
@@ -34,9 +32,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<SharedJobDependency>())
-                return;
-
             if (!SystemAPI.HasSingleton<TargetingConfig>())
                 return;
 
@@ -48,9 +43,6 @@ namespace UnityDotsCrowdLab.Features.Targeting
             if (cellSize <= 0f)
                 return;
 
-            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
-
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
             var handle = new SpatialHashTargetingJob
@@ -58,10 +50,9 @@ namespace UnityDotsCrowdLab.Features.Targeting
                 spatialMap = singleton.SpatialMap,
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = cellSize,
-            }.ScheduleParallel(combined);
+            }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
         }
 
         [BurstCompile]
