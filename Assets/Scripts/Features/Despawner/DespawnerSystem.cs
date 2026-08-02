@@ -1,7 +1,5 @@
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Jobs;
-using UnityDotsCrowdLab.Core.Job;
 using UnityDotsCrowdLab.Features.CombatUnit;
 using UnityDotsCrowdLab.Features.Damage;
 
@@ -18,12 +16,6 @@ namespace UnityDotsCrowdLab.Features.Despawner
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<SharedJobDependency>())
-                return;
-
-            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
-
             // FixedStep の終端で再生される ECB を取得
             var ecbSingleton =
                 SystemAPI.GetSingleton<EndFixedStepSimulationEntityCommandBufferSystem.Singleton>();
@@ -35,10 +27,9 @@ namespace UnityDotsCrowdLab.Features.Despawner
             var handle = new DespawnerJob
             {
                 ecb = ecb
-            }.ScheduleParallel(combined);
+            }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
         }
 
         [BurstCompile]

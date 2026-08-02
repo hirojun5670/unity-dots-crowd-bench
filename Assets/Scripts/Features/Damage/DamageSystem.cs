@@ -2,9 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Transforms;
-using UnityDotsCrowdLab.Core.Job;
 using UnityDotsCrowdLab.Features.CombatUnit;
 using UnityDotsCrowdLab.Features.Targeting;
 
@@ -33,13 +31,7 @@ namespace UnityDotsCrowdLab.Features.Damage
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<SharedJobDependency>())
-                return;
-
             float deltaTime = SystemAPI.Time.DeltaTime;
-
-            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
 
             // entity数に応じて容量を調整する
             int count = SystemAPI.QueryBuilder().WithAll<LocalTransform, CombatTarget>().Build().CalculateEntityCount();
@@ -50,7 +42,7 @@ namespace UnityDotsCrowdLab.Features.Damage
             {
                 damageMap = damageMap.AsParallelWriter(),
                 deltaTime = deltaTime,
-            }.ScheduleParallel(combined);
+            }.ScheduleParallel(state.Dependency);
 
             // ダメージを適用
             var applyDamageJobHandle = new ApplyDamageJob
@@ -61,7 +53,6 @@ namespace UnityDotsCrowdLab.Features.Damage
             var disposeHandle = damageMap.Dispose(applyDamageJobHandle);
 
             state.Dependency = disposeHandle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = applyDamageJobHandle });
         }
 
         [BurstCompile]

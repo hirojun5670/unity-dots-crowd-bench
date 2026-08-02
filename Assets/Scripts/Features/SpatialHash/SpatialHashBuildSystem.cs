@@ -1,10 +1,8 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityDotsCrowdLab.Core.Job;
 using UnityDotsCrowdLab.Core.Spatial;
 using UnityDotsCrowdLab.Features.CombatUnit;
 using UnityDotsCrowdLab.Features.Spawner;
@@ -20,8 +18,6 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
     [BurstCompile]
     public partial struct SpatialHashBuildSystem : ISystem
     {
-        private JobHandle sharedJobhandle;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -35,18 +31,12 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
                 SpatialMapBuffer1 = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
                 SnapshotMapBuffer1 = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
             });
-
-            // 依存関係を管理するシングルトンEntityを作成
-            var sharedJobDependencyEntity = state.EntityManager.CreateEntity();
-            state.EntityManager.AddComponentData(sharedJobDependencyEntity, new SharedJobDependency { Handle = sharedJobhandle });
         }
 
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
             // 全てのジョブの終了を待つ
-            if (SystemAPI.HasSingleton<SharedJobDependency>())
-                SystemAPI.GetSingleton<SharedJobDependency>().Handle.Complete();
             state.Dependency.Complete();
 
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
@@ -59,16 +49,10 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.HasSingleton<SharedJobDependency>())
-                return;
             if (!SystemAPI.HasSingleton<TargetingConfig>())
                 return;
 
             var config = SystemAPI.GetSingleton<TargetingConfig>();
-
-            var sharedJobhandle = SystemAPI.GetSingleton<SharedJobDependency>().Handle;
-            var combined = JobHandle.CombineDependencies(state.Dependency, sharedJobhandle);
-
 
             var singleton = SystemAPI.GetSingletonRW<SpatialHashMapSingleton>();
 
@@ -87,10 +71,9 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
                 SpatialMap = singleton.ValueRW.WriteSpatialMap.AsParallelWriter(),
                 SnapshotMap = singleton.ValueRW.WriteSnapshotMap.AsParallelWriter(),
                 CellSize = config.CellSize,
-            }.ScheduleParallel(combined);
+            }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
-            SystemAPI.SetSingleton(new SharedJobDependency { Handle = handle });
         }
     }
 
