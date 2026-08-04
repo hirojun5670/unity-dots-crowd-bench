@@ -43,6 +43,8 @@ namespace UnityDotsCrowdLab.Features.Targeting
             if (cellSize <= 0f)
                 return;
 
+            int frameParity = (int)(SystemAPI.Time.ElapsedTime * 60.0) & 1;
+
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
             var handle = new SpatialHashTargetingJob
@@ -50,6 +52,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
                 spatialMap = singleton.SpatialMap,
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = cellSize,
+                frameParity = frameParity,
             }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
@@ -61,9 +64,13 @@ namespace UnityDotsCrowdLab.Features.Targeting
             [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
+            [ReadOnly] public int frameParity;
 
             public void Execute(Entity entity, ref CombatTarget combatTarget, in LocalTransform transform, in FactionData faction, in UnitRadius radius, in AttackPowerData attack)
             {
+                // フレームパリティを用いて、半分のEntityだけが索敵を行うことで負荷を分散する
+                if ((entity.Index & 1) != frameParity) return;
+
                 Entity nearest = Entity.Null;
                 float nearestDistSq = float.MaxValue;
                 if (!snapshotMap.TryGetValue(entity, out var mySnap)) return;
@@ -72,6 +79,20 @@ namespace UnityDotsCrowdLab.Features.Targeting
                 float estimatedMaxTargetRadius = 0.5f; // 目安としての最大ターゲット半径、必要に応じて調整
                 float maxPossibleDistance = attack.Range + radius.Radius + estimatedMaxTargetRadius;
                 int cellSpan = (int)math.ceil(maxPossibleDistance / cellSize);
+
+                // 既にターゲットが存在する場合は、ターゲットが有効かどうかを確認し索敵をスキップする
+                if (combatTarget.Value != Entity.Null
+                    && combatTarget.Value != entity
+                    && snapshotMap.TryGetValue(combatTarget.Value, out var targetSnap)
+                    && targetSnap.Team != faction.Team)
+                {
+                    var targetRadius = targetSnap.Radius;
+                    float distSq = math.distancesq(mySnap.Position, targetSnap.Position);
+                    float maxAttackDistance = attack.Range + radius.Radius + targetRadius;
+                    // 射程境界で毎フレーム再索敵しないようにヒステリシスを持たせる
+                    float keepTargetDistance = maxAttackDistance * 1.25f;
+                    if (distSq < keepTargetDistance * keepTargetDistance) return;
+                }
 
                 for (int dx = -cellSpan; dx <= cellSpan; dx++)
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
