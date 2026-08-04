@@ -6,7 +6,14 @@ using UnityDotsCrowdLab.Features.Damage;
 namespace UnityDotsCrowdLab.Features.Despawner
 {
     /// <summary>
-    /// healthが０以下のEntityを削除するSystem
+    /// 削除対象を示すタグ
+    /// </summary>
+    public struct DeadTag : IComponentData
+    {
+    }
+
+    /// <summary>
+    /// healthが０以下のEntityにDeadTagを付与するSystem
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(DamageSystem))]
@@ -33,6 +40,7 @@ namespace UnityDotsCrowdLab.Features.Despawner
         }
 
         [BurstCompile]
+        [WithNone(typeof(DeadTag))]
         public partial struct DespawnerJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ecb;
@@ -41,7 +49,7 @@ namespace UnityDotsCrowdLab.Features.Despawner
             {
                 if (health.Current <= 0f)
                 {
-                    ecb.DestroyEntity(chunkIndex, entity);
+                    ecb.AddComponent<DeadTag>(chunkIndex, entity);
                 }
             }
         }
