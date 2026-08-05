@@ -43,7 +43,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
             if (cellSize <= 0f)
                 return;
 
-            int frameParity = (int)(SystemAPI.Time.ElapsedTime * 60.0) & 1;
+            int frameParity = ((int)math.floor(SystemAPI.Time.ElapsedTime / math.max(SystemAPI.Time.DeltaTime, 1e-6f))) & 1;
 
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
