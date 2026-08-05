@@ -26,9 +26,9 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             state.EntityManager.AddComponentData(entity, new SpatialHashMapSingleton
             {
                 CurrentReadBufferIndex = 0,
-                SpatialMapBuffer0 = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
+                SpatialMapBuffer0 = new NativeParallelMultiHashMap<long, Entity>(1000, Allocator.Persistent),
                 SnapshotMapBuffer0 = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
-                SpatialMapBuffer1 = new NativeParallelMultiHashMap<int, Entity>(1000, Allocator.Persistent),
+                SpatialMapBuffer1 = new NativeParallelMultiHashMap<long, Entity>(1000, Allocator.Persistent),
                 SnapshotMapBuffer1 = new NativeParallelHashMap<Entity, BoidSnapshot>(1000, Allocator.Persistent),
             });
         }
@@ -90,14 +90,14 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
     [BurstCompile]
     public partial struct BuildSpatialHashJob : IJobEntity
     {
-        public NativeParallelMultiHashMap<int, Entity>.ParallelWriter SpatialMap;
+        public NativeParallelMultiHashMap<long, Entity>.ParallelWriter SpatialMap;
         public NativeParallelHashMap<Entity, BoidSnapshot>.ParallelWriter SnapshotMap;
         [ReadOnly] public float CellSize;
 
         public void Execute(Entity entity, in LocalTransform transform, in BoidVelocity velocity, in UnitRadius unitRadius, in FactionData faction)
         {
-            int cellHash = SpatialHashUtility.ComputeHash(
-                SpatialHashUtility.ComputeCellCoord(transform.Position, CellSize));
+            long cellHash = SpatialHashUtility.ComputeHashFromPositionAndTeam(
+                transform.Position, CellSize, faction.Team);
 
             SpatialMap.Add(cellHash, entity);
 
