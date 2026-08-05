@@ -39,6 +39,8 @@ namespace UnityDotsCrowdLab.Features.BoidModel
             var config = SystemAPI.GetSingleton<TargetingConfig>();
             if (config.CellSize <= 0f) return;
 
+            int frameParity = ((int)math.floor(SystemAPI.Time.ElapsedTime / math.max(SystemAPI.Time.DeltaTime, 1e-6f))) & 1;
+
             var singleton = SystemAPI.GetSingleton<SpatialHashMapSingleton>();
 
             var handle = new BoidModelJob
@@ -47,6 +49,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 snapshotMap = singleton.SnapshotMap,
                 cellSize = config.CellSize,
                 deltaTime = SystemAPI.Time.DeltaTime,
+                frameParity = frameParity,
             }.ScheduleParallel(state.Dependency);
 
             state.Dependency = handle;
@@ -59,9 +62,13 @@ namespace UnityDotsCrowdLab.Features.BoidModel
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
             [ReadOnly] public float deltaTime;
+            [ReadOnly] public int frameParity;
 
             public void Execute(Entity entity, ref LocalTransform transform, ref BoidVelocity velocity, in FactionData faction, in UnitRadius radius, in MoveTarget moveTarget, in CombatTarget combatTarget)
             {
+                // フレームパリティを用いて、半分のEntityだけが計算を行うことで負荷を分散する
+                if ((entity.Index & 1) != frameParity) return;
+
                 int3 myCell = SpatialHashUtility.ComputeCellCoord(transform.Position, cellSize);
 
                 int cellSpan = (int)math.ceil((radius.Radius * 2f) / cellSize);
@@ -71,6 +78,8 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                 float3 alignmentForce = float3.zero;
                 float3 cohesionCenter = float3.zero;
                 int neighborCount = 0;
+                // セル単位の計算対象の最大Entity数
+                int maxEntitiesPerCell = 2;
 
                 for (int dx = -cellSpan; dx <= cellSpan; dx++)
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
@@ -78,6 +87,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                         {
                             int neighborHash = SpatialHashUtility.ComputeHash(myCell + new int3(dx, dy, dz));
 
+                            int entityCountInCell = 0;
                             foreach (var other in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (other == entity) continue;
@@ -97,6 +107,8 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                                 // 結合
                                 cohesionCenter += otherPosition;
                                 neighborCount++;
+                                entityCountInCell++;
+                                if (entityCountInCell >= maxEntitiesPerCell) break;
                             }
                         }
 
@@ -171,7 +183,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
 
                 // 速度と位置を更新
                 velocity.Value = boidForce;
-                transform.Position += boidForce * deltaTime;
+                transform.Position += boidForce * deltaTime * 2f;
 
 
                 // 進行方向に回転させる
@@ -184,7 +196,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                     transform.Rotation = math.slerp(
                         transform.Rotation,
                         targetRotation,
-                        math.saturate(turnSpeed * deltaTime)
+                        math.saturate(turnSpeed * deltaTime * 2f)
                     );
                 }
             }
