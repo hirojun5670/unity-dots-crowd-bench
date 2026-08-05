@@ -46,5 +46,31 @@ namespace UnityDotsCrowdLab.Core.Spatial
         {
             return ComputeHash(ComputeCellCoord(position, cellSize));
         }
+
+        /// <summary>
+        /// ワールド座標とチームIDからハッシュ値を計算  
+        /// </summary>
+        /// <param name="position">ワールド座標</param> 
+        /// <param name="cellSize">セルサイズ</param>
+        /// <param name="team">チームID</param>
+        /// <returns>ハッシュ値</returns>
+        public static long ComputeHashFromPositionAndTeam(float3 position, float cellSize, int team)
+        {
+            // key = (Team を上位32bit) + (CellHash を下位32bit)
+            int cellHash = ComputeHash(ComputeCellCoord(position, cellSize));
+            return ((long)team << 32) | (uint)cellHash;
+        }
+
+        /// <summary>
+        /// セル座標とチームIDからハッシュ値を計算      
+        /// </summary>
+        /// <param name="cellCoord">セル座標</param>
+        /// <param name="team">チームID</param>
+        /// <returns>ハッシュ値</returns>
+        public static long ComputeHashFromCellCoord(int3 cellCoord, int team)
+        {
+            int cellHash = ComputeHash(cellCoord);
+            return ((long)team << 32) | (uint)cellHash;
+        }
     }
 }
