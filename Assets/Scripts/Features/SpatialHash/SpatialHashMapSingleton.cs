@@ -15,10 +15,10 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
         public JobHandle Buffer0JobHandle;
         public JobHandle Buffer1JobHandle;
 
-        public NativeParallelMultiHashMap<int, Entity> SpatialMapBuffer0;
+        public NativeParallelMultiHashMap<long, Entity> SpatialMapBuffer0;
         public NativeParallelHashMap<Entity, BoidSnapshot> SnapshotMapBuffer0;
 
-        public NativeParallelMultiHashMap<int, Entity> SpatialMapBuffer1;
+        public NativeParallelMultiHashMap<long, Entity> SpatialMapBuffer1;
         public NativeParallelHashMap<Entity, BoidSnapshot> SnapshotMapBuffer1;
 
 
@@ -43,7 +43,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
                 Buffer1JobHandle = handle;
         }
 
-        public NativeParallelMultiHashMap<int, Entity> SpatialMap
+        public NativeParallelMultiHashMap<long, Entity> SpatialMap
         {
             get
             {
@@ -58,7 +58,7 @@ namespace UnityDotsCrowdLab.Features.SpatialHash
             }
         }
 
-        public NativeParallelMultiHashMap<int, Entity> WriteSpatialMap
+        public NativeParallelMultiHashMap<long, Entity> WriteSpatialMap
         {
             get
             {

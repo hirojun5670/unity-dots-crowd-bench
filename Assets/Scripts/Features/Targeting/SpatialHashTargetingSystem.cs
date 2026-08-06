@@ -61,7 +61,7 @@ namespace UnityDotsCrowdLab.Features.Targeting
         [BurstCompile]
         public partial struct SpatialHashTargetingJob : IJobEntity
         {
-            [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
+            [ReadOnly] public NativeParallelMultiHashMap<long, Entity> spatialMap;
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
             [ReadOnly] public int frameParity;
@@ -98,30 +98,27 @@ namespace UnityDotsCrowdLab.Features.Targeting
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
                         for (int dz = -cellSpan; dz <= cellSpan; dz++)
                         {
-                            int neighborHash = SpatialHashUtility.ComputeHash(myCell + new int3(dx, dy, dz));
+                            long neighborHash = SpatialHashUtility.ComputeHashFromCellCoord(myCell + new int3(dx, dy, dz), 1 - mySnap.Team);
 
                             foreach (var candidate in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (candidate == entity) continue;
                                 if (snapshotMap.TryGetValue(candidate, out var candidateSnap))
                                 {
-                                    if (faction.Team == candidateSnap.Team) continue;
+                                    var targetRadius = candidateSnap.Radius;
+                                    float distSq = math.distancesq(mySnap.Position, candidateSnap.Position);
+                                    float maxAttackDistance = attack.Range + radius.Radius + targetRadius;
+                                    if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
+
+                                    if (distSq < nearestDistSq)
+                                    {
+                                        nearestDistSq = distSq;
+                                        nearest = candidate;
+                                    }
                                 }
                                 else
                                 {
                                     continue;
-                                }
-
-
-                                var targetRadius = candidateSnap.Radius;
-                                float distSq = math.distancesq(mySnap.Position, candidateSnap.Position);
-                                float maxAttackDistance = attack.Range + radius.Radius + targetRadius;
-                                if (distSq > maxAttackDistance * maxAttackDistance) continue; // 射程外は対象外
-
-                                if (distSq < nearestDistSq)
-                                {
-                                    nearestDistSq = distSq;
-                                    nearest = candidate;
                                 }
                             }
                         }

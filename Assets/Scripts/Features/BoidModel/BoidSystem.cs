@@ -58,7 +58,7 @@ namespace UnityDotsCrowdLab.Features.BoidModel
         [BurstCompile]
         public partial struct BoidModelJob : IJobEntity
         {
-            [ReadOnly] public NativeParallelMultiHashMap<int, Entity> spatialMap;
+            [ReadOnly] public NativeParallelMultiHashMap<long, Entity> spatialMap;
             [ReadOnly] public NativeParallelHashMap<Entity, BoidSnapshot> snapshotMap;
             [ReadOnly] public float cellSize;
             [ReadOnly] public float deltaTime;
@@ -85,14 +85,14 @@ namespace UnityDotsCrowdLab.Features.BoidModel
                     for (int dy = -cellSpan; dy <= cellSpan; dy++)
                         for (int dz = -cellSpan; dz <= cellSpan; dz++)
                         {
-                            int neighborHash = SpatialHashUtility.ComputeHash(myCell + new int3(dx, dy, dz));
+                            long neighborHash = SpatialHashUtility.ComputeHashFromCellCoord(myCell + new int3(dx, dy, dz), faction.Team);
 
                             int entityCountInCell = 0;
                             foreach (var other in spatialMap.GetValuesForKey(neighborHash))
                             {
                                 if (other == entity) continue;
                                 if (!snapshotMap.TryGetValue(other, out var otherSnap)) continue;
-                                if (faction.Team != otherSnap.Team) continue;
+
                                 float3 otherPosition = otherSnap.Position;
                                 // 分離
                                 float3 separationVector = transform.Position - otherPosition;
