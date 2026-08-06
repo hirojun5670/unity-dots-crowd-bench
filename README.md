@@ -38,6 +38,41 @@ ECS から情報を取得する Model、情報を表示する UIView（UI Toolki
 Model は Entity の情報収集に専念し、UIView は受け取った情報の表示のみを担当します。
 依存関係は VContainer で注入しています。
 
+## パフォーマンス検証（2026/08/06）
+![スクリーンショット2](./docs/unity-dots-crowd-bench_15000.jpg)
+
+### 検証環境
+- 15,000 体の Entity
+- ユニットサイズ: 1f × 1f
+- cellSize = 2f
+- 空間ハッシュ索敵の CellSpan = 1（自身のセルと周囲 26 セル、計 27 セル）
+
+### 検証結果
+| System | Main Thread | Worker Thread (1〜3) |
+|---|---:|---:|
+| SpatialHashTargetingSystem | - | 1.07 ms |
+| BoidSystem | - | 2.46 ms |
+| SpatialHashBuildSystem | - | 0.57 ms |
+| JobHandle.Complete | 3.47 ms | - |
+
+※ Development Build で計測しました。FPS はおおむね 200〜250 前後でした。
+※ JobHandle.Complete は、EndFixedStepSimulationEntityCommandBufferSystem における待機時間（メインスレッド側）です。
+
+SpatialHashTargetingSystem と BoidSystem の計算処理を最適化し、Entity ID でフレーム分散したことにより、15,000 体の Entity を出現させても十分なパフォーマンスを確保できています。
+また、SpatialHash を Team+Cell の合成キー化したことで、Boid/Targeting の検索対象範囲を絞り込み、負荷軽減に大きく寄与しました。
+
+
+### 最適化の過程
+- Despawner を含む主要 System をすべて Job 化
+- System 全体の更新基準を、メインスレッドの FPS 依存から固定ステップ（FixedStep）に変更 [#40]
+- SpatialHashTargetingSystem と BoidSystem の 1 フレーム内計算量を低減 [#51]
+- SpatialHash を Team+Cell の合成キー化し、Boid/Targeting の負荷を大幅削減 [#52]
+
+## 今後の展望
+- 3つ以上の複数チーム対応 [[#53](https://github.com/hirojun5670/unity-dots-crowd-bench/issues/53)]
+
+
+
 ## パフォーマンス検証（2026/07/27）
 ![スクリーンショット2](./docs/unity-dots-crowd-bench_2026-07-27_115621.jpg)
 
