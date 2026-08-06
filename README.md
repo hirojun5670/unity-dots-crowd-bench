@@ -64,9 +64,9 @@ SpatialHashTargetingSystem と BoidSystem の計算処理を最適化し、Entit
 
 ### 最適化の過程
 - Despawner を含む主要 System をすべて Job 化
-- System 全体の更新基準を、メインスレッドの FPS 依存から固定ステップ（FixedStep）に変更 [#40]
-- SpatialHashTargetingSystem と BoidSystem の 1 フレーム内計算量を低減 [#51]
-- SpatialHash を Team+Cell の合成キー化し、Boid/Targeting の負荷を大幅削減 [#52]
+- System 全体の更新基準を、メインスレッドの FPS 依存から固定ステップ（FixedStep）に変更 [#40](https://github.com/hirojun5670/unity-dots-crowd-bench/pull/40)
+- SpatialHashTargetingSystem と BoidSystem の 1 フレーム内計算量を低減 [#51](https://github.com/hirojun5670/unity-dots-crowd-bench/pull/51)
+- SpatialHash を Team+Cell の合成キー化し、Boid/Targeting の負荷を大幅削減 [#52](https://github.com/hirojun5670/unity-dots-crowd-bench/pull/52)
 
 ## 今後の展望
 - 3つ以上の複数チーム対応 [[#53](https://github.com/hirojun5670/unity-dots-crowd-bench/issues/53)]
